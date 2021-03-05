@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es2020",
+    "lib": [
+      "es2020"
+    ],
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "resolveJsonModule": true,
+    "paths": {
+      "@constants": [
+        "src/constants"
+      ],
+      "database/*": [
+        "src/database/*"
+      ],
+      "api/*": [
+        "src/api/*"
+      ],
+      "common/*": [
+        "src/common/*"
+      ]
+    },
+    "esModuleInterop": true
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
