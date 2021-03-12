@@ -9,9 +9,10 @@ import {
   Default,
 } from 'sequelize-typescript';
 import { UserModel } from './user.model';
+import { UserHealthIndicatorInterface } from 'common/database/interfaces';
 
 @Table({ tableName: 'UserHealthIndicator' })
-export class UserHealthIndicatorModel extends Model<UserHealthIndicatorModel> {
+export class UserHealthIndicatorModel extends Model<UserHealthIndicatorInterface> {
   @PrimaryKey
   @ForeignKey(() => UserModel)
   @Column(DataType.INTEGER)

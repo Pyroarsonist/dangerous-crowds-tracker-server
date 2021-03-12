@@ -1,8 +1,8 @@
 import { Request } from 'express';
-import { UserModel } from 'common/database/models';
+import { UserInterface } from 'common/database/interfaces';
 
 export interface LocalRequestInterface extends Request {
   locals: {
-    user?: UserModel;
+    user?: UserInterface;
   };
 }

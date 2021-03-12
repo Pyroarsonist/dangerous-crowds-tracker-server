@@ -12,9 +12,14 @@ import {
 import { UserLocationModel } from './user-location.model';
 import { UserHealthIndicatorModel } from './user-health-indicator.model';
 import crypto from 'crypto';
+import {
+  UserHealthIndicatorInterface,
+  UserInterface,
+  UserLocationInterface,
+} from 'common/database/interfaces';
 
 @Table({ tableName: 'User' })
-export class UserModel extends Model<UserModel> {
+export class UserModel extends Model<UserInterface> {
   @PrimaryKey
   @Unique
   @AutoIncrement
@@ -43,10 +48,10 @@ export class UserModel extends Model<UserModel> {
   token: string;
 
   @HasOne(() => UserLocationModel)
-  location: UserLocationModel;
+  location: UserLocationInterface;
 
   @HasOne(() => UserHealthIndicatorModel)
-  status: UserHealthIndicatorModel;
+  status: UserHealthIndicatorInterface;
 
   static makePasswordHash(password: string): string {
     return crypto

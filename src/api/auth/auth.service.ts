@@ -46,8 +46,6 @@ export class AuthService {
     }
     const passwordHash = UserModel.makePasswordHash(password);
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     const user = await this.userModel.create({
       email,
       passwordHash,

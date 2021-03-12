@@ -7,6 +7,7 @@ import {
 import { InjectModel } from '@nestjs/sequelize';
 import { UserModel } from 'common/database/models';
 import { LocalRequestInterface } from 'common/interfaces/local-request.interface';
+import { UserInterface } from 'common/database/interfaces';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -28,7 +29,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    request.locals.user = user;
+    request.locals.user = user.toJSON() as UserInterface;
 
     return true;
   }

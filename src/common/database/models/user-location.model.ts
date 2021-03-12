@@ -6,11 +6,17 @@ import {
   DataType,
   AllowNull,
   PrimaryKey,
+  BelongsTo,
 } from 'sequelize-typescript';
 import { UserModel } from './user.model';
+import {
+  PointInterface,
+  UserInterface,
+  UserLocationInterface,
+} from 'common/database/interfaces';
 
 @Table({ tableName: 'UserLocation' })
-export class UserLocationModel extends Model<UserLocationModel> {
+export class UserLocationModel extends Model<UserLocationInterface> {
   @PrimaryKey
   @ForeignKey(() => UserModel)
   @Column(DataType.INTEGER)
@@ -18,6 +24,8 @@ export class UserLocationModel extends Model<UserLocationModel> {
 
   @AllowNull(false)
   @Column(DataType.GEOMETRY('POINT'))
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  point: any;
+  point: PointInterface;
+
+  @BelongsTo(() => UserModel)
+  user: UserInterface;
 }
