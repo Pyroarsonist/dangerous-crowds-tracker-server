@@ -10,7 +10,7 @@
       "es2020"
     ],
     "sourceMap": true,
-    "outDir": "./dist",
+    "outDir": "./build",
     "baseUrl": "./",
     "resolveJsonModule": true,
     "paths": {
