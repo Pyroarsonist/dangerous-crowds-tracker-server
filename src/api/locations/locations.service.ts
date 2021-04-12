@@ -25,7 +25,7 @@ export class LocationsService {
   ): Promise<void> {
     const point: PointInterface = {
       type: 'Point',
-      coordinates: [latitude, longitude],
+      coordinates: [longitude, latitude],
     };
 
     await this.userLocationModel.upsert({ userId, point });
@@ -41,7 +41,7 @@ export class LocationsService {
     return {
       status,
       locations: locations.map((l) => {
-        const [latitude, longitude] = l.point.coordinates;
+        const [longitude, latitude] = l.point.coordinates;
         return {
           latitude,
           longitude,
@@ -58,7 +58,7 @@ export class LocationsService {
     const distanceAttribute = sequelize.fn(
       'ST_Distancesphere',
       sequelize.literal('point'),
-      sequelize.literal(`ST_MakePoint(${latitude},${longitude})`),
+      sequelize.literal(`ST_MakePoint(${longitude},${latitude})`),
     );
 
     const locations = await this.userLocationModel.findAll({

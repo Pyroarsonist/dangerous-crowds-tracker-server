@@ -8,5 +8,6 @@ export interface PointInterface {
 
   type: string;
 
+  // longitude, latitude
   coordinates: [number, number];
 }
