@@ -9,8 +9,9 @@ import { StatusEnum } from 'api/locations/enums';
 
 @Injectable()
 export class LocationsService {
-  private readonly RADIUS = 50; // 50 meters
-  private readonly MAXIMUM_OK_DISTANCE = 3;
+  private readonly MAXIMUM_UPDATE_AT_INTERVAL = 30; // 30 minutes
+  private readonly RADIUS = 2000; // 2000 meters
+  private readonly MAXIMUM_OK_DISTANCE = 5; // 5 meters
   constructor(
     @InjectModel(UserModel)
     private readonly userModel: typeof UserModel,
@@ -76,7 +77,7 @@ export class LocationsService {
         },
         {
           updatedAt: {
-            [Op.gte]: moment().subtract(15, 'm'),
+            [Op.gte]: moment().subtract(this.MAXIMUM_UPDATE_AT_INTERVAL, 'm'),
           },
         },
         sequelize.where(distanceAttribute, {
