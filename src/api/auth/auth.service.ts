@@ -50,7 +50,7 @@ export class AuthService {
       email,
       passwordHash,
       name,
-      birthDate: new Date(birthDate),
+      birthDate: new Date(birthDate).toISOString(),
       token: UserModel.makeRandomToken(),
     });
 

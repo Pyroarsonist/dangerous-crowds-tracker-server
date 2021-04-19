@@ -7,7 +7,7 @@ export interface UserInterface extends TimestampsInterface {
 
   name: string;
 
-  birthDate: Date;
+  birthDate: string;
 
   email: string;
 

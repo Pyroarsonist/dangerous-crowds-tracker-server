@@ -5,10 +5,17 @@ import { AuthService } from './auth/auth.service';
 import { AuthController } from './auth/auth.controller';
 import { LocationsService } from 'api/locations/locations.service';
 import { LocationsController } from 'api/locations/locations.controller';
+import { ProfileController } from 'api/profile/profile.controller';
+import { ProfileService } from 'api/profile/profile.service';
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [HealthzController, AuthController, LocationsController],
-  providers: [AuthService, LocationsService],
+  controllers: [
+    HealthzController,
+    AuthController,
+    LocationsController,
+    ProfileController,
+  ],
+  providers: [AuthService, LocationsService, ProfileService],
 })
 export class ApiModule {}

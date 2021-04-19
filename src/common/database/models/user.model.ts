@@ -32,7 +32,7 @@ export class UserModel extends Model<UserInterface> {
 
   @AllowNull(false)
   @Column(DataType.DATEONLY)
-  birthDate: Date;
+  birthDate: string;
 
   @AllowNull(false)
   @Unique
