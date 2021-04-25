@@ -8,4 +8,5 @@ class LocationDto {
 export class GetLocationsResponseDto {
   public readonly status: StatusEnum;
   public readonly locations: LocationDto[];
+  public readonly radius: number;
 }
