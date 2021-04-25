@@ -7,6 +7,8 @@ import { LocationsService } from 'api/locations/locations.service';
 import { LocationsController } from 'api/locations/locations.controller';
 import { ProfileController } from 'api/profile/profile.controller';
 import { ProfileService } from 'api/profile/profile.service';
+import { HealthController } from 'api/health/health.controller';
+import { HealthService } from 'api/health/health.service';
 
 @Module({
   imports: [DatabaseModule],
@@ -15,7 +17,8 @@ import { ProfileService } from 'api/profile/profile.service';
     AuthController,
     LocationsController,
     ProfileController,
+    HealthController,
   ],
-  providers: [AuthService, LocationsService, ProfileService],
+  providers: [AuthService, LocationsService, ProfileService, HealthService],
 })
 export class ApiModule {}

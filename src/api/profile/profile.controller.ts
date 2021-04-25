@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ProfileService } from './profile.service';
-import { ProfileRequestDto } from 'api/profile/dtos';
-import { ProfileResponseDto } from 'api/profile/dtos/responses';
+import { ProfileRequestDto, ProfileResponseDto } from 'api/profile/dtos';
 import { GetUser } from 'common/decorators/current-user.decorator';
 import { AuthGuard } from 'common/guards/auth.guard';
 
@@ -20,8 +19,12 @@ export class ProfileController {
   @Post()
   public async updateProfile(
     @GetUser('id') userId: number,
-    @Body() user: ProfileRequestDto,
+    @Body() profile: ProfileRequestDto,
   ): Promise<void> {
-    await this.profileService.updateProfile(userId, user.name, user.birthDate);
+    await this.profileService.updateProfile(
+      userId,
+      profile.name,
+      profile.birthDate,
+    );
   }
 }
