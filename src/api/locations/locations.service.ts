@@ -1,17 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { UserLocationModel, UserModel } from 'common/database/models';
+import {
+  UserHealthIndicatorModel,
+  UserLocationModel,
+  UserModel,
+} from 'common/database/models';
 import { PointInterface } from 'common/database/interfaces';
 import sequelize, { Op } from 'sequelize';
 import moment from 'moment';
 import { GetLocationsResponseDto } from 'api/locations/dtos/responses';
-import { StatusEnum } from 'api/locations/enums';
+import { CrowdStatusEnum } from 'api/locations/enums';
+import { HealthStatusEnum } from 'common/database/enums';
 
 @Injectable()
 export class LocationsService {
+  public static readonly MAX_RADIUS = 5000; // 5000 meters
   private readonly MAXIMUM_UPDATE_AT_INTERVAL = 30; // 30 minutes
-  private readonly RADIUS = 2000; // 2000 meters
-  private readonly MAXIMUM_OK_DISTANCE = 5; // 5 meters
+  private readonly FORMULA_CONSTANT = 50;
+  private readonly STATUS_COEFFICIENTS = {
+    UNKNOWN: 10,
+    INFECTED: 30,
+    RECOVERED: 0.5,
+    VACCINATED: 0.01,
+  };
+  private readonly POINTS_LIMITS = {
+    BAD: 140,
+    OK: 50,
+  };
+
   constructor(
     @InjectModel(UserModel)
     private readonly userModel: typeof UserModel,
@@ -36,9 +52,16 @@ export class LocationsService {
     id: number,
     latitude: number,
     longitude: number,
+    _radius?: number,
   ): Promise<GetLocationsResponseDto> {
-    const locations = await this.getLocationsInCircle(id, latitude, longitude);
-    const status = this.resolveHealthStatus(locations);
+    const radius = _radius ?? LocationsService.MAX_RADIUS;
+    const locations = await this.getLocationsInCircle(
+      id,
+      latitude,
+      longitude,
+      radius,
+    );
+    const { status, points } = this.calculateHealthStatusAndPoints(locations);
     return {
       status,
       locations: locations.map((l) => {
@@ -48,7 +71,8 @@ export class LocationsService {
           longitude,
         };
       }),
-      radius: this.RADIUS,
+      radius,
+      points,
     };
   }
 
@@ -56,6 +80,7 @@ export class LocationsService {
     id: number,
     latitude: number,
     longitude: number,
+    radius: number,
   ): Promise<UserLocationModel[]> {
     const distanceAttribute = sequelize.fn(
       'ST_Distancesphere',
@@ -63,7 +88,7 @@ export class LocationsService {
       sequelize.literal(`ST_MakePoint(${longitude},${latitude})`),
     );
 
-    const locations = await this.userLocationModel.findAll({
+    return this.userLocationModel.findAll({
       attributes: [
         ...Object.keys(UserLocationModel.rawAttributes),
         [distanceAttribute, 'distance'],
@@ -82,30 +107,69 @@ export class LocationsService {
           },
         },
         sequelize.where(distanceAttribute, {
-          [Op.lte]: this.RADIUS,
+          [Op.lte]: radius,
         }),
       ],
       order: [[sequelize.literal('distance'), 'ASC']],
-      include: [UserLocationModel.associations.user],
+      include: [
+        {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          model: UserModel,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          include: [UserHealthIndicatorModel],
+        },
+      ],
     });
-
-    return locations;
   }
 
-  private resolveHealthStatus(locations: UserLocationModel[]): StatusEnum {
-    //todo: refactor
-
-    // console.log(locations[0].getDataValue('distance'));
-    const distances = locations.map((l) => l.getDataValue('distance'));
-    // console.log(distances);
-    if (!distances.length) {
-      return StatusEnum.GOOD;
+  private statusCoefficient(status: HealthStatusEnum): number {
+    if (status === HealthStatusEnum.INFECTED) {
+      return this.STATUS_COEFFICIENTS.INFECTED;
+    }
+    if (status === HealthStatusEnum.RECOVERED) {
+      return this.STATUS_COEFFICIENTS.RECOVERED;
+    }
+    if (status === HealthStatusEnum.VACCINATED) {
+      return this.STATUS_COEFFICIENTS.VACCINATED;
     }
 
-    if (distances.some((d) => d < this.MAXIMUM_OK_DISTANCE)) {
-      return StatusEnum.BAD;
+    return this.STATUS_COEFFICIENTS.UNKNOWN;
+  }
+
+  private getLocationPoints(
+    distance: number,
+    status = HealthStatusEnum.UNKNOWN,
+  ): number {
+    const k = this.statusCoefficient(status);
+
+    return Math.ceil(this.FORMULA_CONSTANT * (k / distance));
+  }
+
+  private calculateHealthStatusAndPoints(
+    locations: UserLocationModel[],
+  ): { status: CrowdStatusEnum; points: number } {
+    const data: {
+      distance: number;
+      status: HealthStatusEnum;
+    }[] = locations.map((location) => ({
+      distance: location.getDataValue('distance'),
+      status: location?.user?.status?.status,
+    }));
+
+    const pointSum = data.reduce(
+      (acc, d) => acc + this.getLocationPoints(d.distance, d.status),
+      0,
+    );
+
+    if (pointSum > this.POINTS_LIMITS.BAD) {
+      return { status: CrowdStatusEnum.BAD, points: pointSum };
+    }
+    if (pointSum > this.POINTS_LIMITS.OK) {
+      return { status: CrowdStatusEnum.OK, points: pointSum };
     }
 
-    return StatusEnum.OK;
+    return { status: CrowdStatusEnum.GOOD, points: pointSum };
   }
 }

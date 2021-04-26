@@ -15,10 +15,10 @@ export class LocationsController {
 
   @Get()
   public async getLocations(
-    @Query() { latitude, longitude }: GetLocationsRequestDto,
+    @Query() { latitude, longitude, radius }: GetLocationsRequestDto,
     @GetUser('id') id: number,
   ): Promise<GetLocationsResponseDto> {
-    return this.locationsService.getLocations(id, latitude, longitude);
+    return this.locationsService.getLocations(id, latitude, longitude, radius);
   }
 
   @Post()

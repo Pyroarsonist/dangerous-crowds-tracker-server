@@ -1,4 +1,4 @@
-import { StatusEnum } from 'api/locations/enums';
+import { CrowdStatusEnum } from 'api/locations/enums';
 
 class LocationDto {
   public readonly latitude: number;
@@ -6,7 +6,8 @@ class LocationDto {
 }
 
 export class GetLocationsResponseDto {
-  public readonly status: StatusEnum;
+  public readonly points: number;
+  public readonly status: CrowdStatusEnum;
   public readonly locations: LocationDto[];
   public readonly radius: number;
 }
