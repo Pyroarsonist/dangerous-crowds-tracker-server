@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserModel } from 'common/database/models';
 import { InjectModel } from '@nestjs/sequelize';
+import { SexEnum } from 'common/database/enums';
 
 @Injectable()
 export class AuthService {
@@ -39,6 +40,7 @@ export class AuthService {
     password: string,
     name: string,
     birthDate: string,
+    sex: SexEnum,
   ): Promise<string> {
     const oldUser = await this.userModel.findOne({ where: { email } });
     if (oldUser) {
@@ -52,6 +54,7 @@ export class AuthService {
       name,
       birthDate: new Date(birthDate).toISOString(),
       token: UserModel.makeRandomToken(),
+      sex,
     });
 
     return user.token;

@@ -17,6 +17,7 @@ import {
   UserInterface,
   UserLocationInterface,
 } from 'common/database/interfaces';
+import { SexEnum } from 'common/database/enums';
 
 @Table({ tableName: 'User' })
 export class UserModel extends Model<UserInterface> {
@@ -46,6 +47,10 @@ export class UserModel extends Model<UserInterface> {
   @AllowNull(false)
   @Column(DataType.STRING(256))
   token: string;
+
+  @AllowNull(false)
+  @Column(DataType.ENUM('female', 'male'))
+  sex: SexEnum;
 
   @HasOne(() => UserLocationModel)
   location: UserLocationInterface;

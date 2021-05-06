@@ -10,7 +10,8 @@ import sequelize, { Op } from 'sequelize';
 import moment from 'moment';
 import { GetLocationsResponseDto } from 'api/locations/dtos/responses';
 import { CrowdStatusEnum } from 'api/locations/enums';
-import { HealthStatusEnum } from 'common/database/enums';
+import { HealthStatusEnum, SexEnum } from 'common/database/enums';
+import { LocationInterface } from 'api/locations/interfaces';
 
 @Injectable()
 export class LocationsService {
@@ -55,22 +56,18 @@ export class LocationsService {
     _radius?: number,
   ): Promise<GetLocationsResponseDto> {
     const radius = _radius ?? LocationsService.MAX_RADIUS;
-    const locations = await this.getLocationsInCircle(
+    const _locations = await this.getLocationsInCircle(
       id,
       latitude,
       longitude,
       radius,
     );
-    const { status, points } = this.calculateHealthStatusAndPoints(locations);
+    const { status, points, locations } = this.calculateHealthStatusAndPoints(
+      _locations,
+    );
     return {
       status,
-      locations: locations.map((l) => {
-        const [longitude, latitude] = l.point.coordinates;
-        return {
-          latitude,
-          longitude,
-        };
-      }),
+      locations,
       radius,
       points,
     };
@@ -124,7 +121,7 @@ export class LocationsService {
     });
   }
 
-  private statusCoefficient(status: HealthStatusEnum): number {
+  private medCoefficient(status: HealthStatusEnum): number {
     if (status === HealthStatusEnum.INFECTED) {
       return this.STATUS_COEFFICIENTS.INFECTED;
     }
@@ -138,38 +135,80 @@ export class LocationsService {
     return this.STATUS_COEFFICIENTS.UNKNOWN;
   }
 
+  private ageCoefficient(age: number) {
+    // 100 y.o. - 1.2 coefficient
+    // 20 y.o. - 1 coefficient
+    return 0.002 * age + 0.95;
+  }
+
+  private sexCoefficient(sex: SexEnum) {
+    if (sex === SexEnum.MALE) {
+      return 1.2;
+    }
+    return 1;
+  }
+
   private getLocationPoints(
     distance: number,
-    status = HealthStatusEnum.UNKNOWN,
+    status,
+    sex: SexEnum,
+    age: number,
   ): number {
-    const k = this.statusCoefficient(status);
+    const kMed = this.medCoefficient(status);
+    const kSex = this.sexCoefficient(sex);
+    const kAge = this.ageCoefficient(age);
 
-    return Math.ceil(this.FORMULA_CONSTANT * (k / distance));
+    return Math.ceil(this.FORMULA_CONSTANT * (kMed / distance) * kAge * kSex);
+  }
+
+  private getHealthStatus(pointSum: number): CrowdStatusEnum {
+    if (pointSum > this.POINTS_LIMITS.BAD) {
+      return CrowdStatusEnum.BAD;
+    }
+    if (pointSum > this.POINTS_LIMITS.OK) {
+      return CrowdStatusEnum.OK;
+    }
+
+    return CrowdStatusEnum.GOOD;
   }
 
   private calculateHealthStatusAndPoints(
-    locations: UserLocationModel[],
-  ): { status: CrowdStatusEnum; points: number } {
-    const data: {
-      distance: number;
-      status: HealthStatusEnum;
-    }[] = locations.map((location) => ({
-      distance: location.getDataValue('distance'),
-      status: location?.user?.status?.status,
-    }));
+    _locations: UserLocationModel[],
+  ): {
+    status: CrowdStatusEnum;
+    points: number;
+    locations: LocationInterface[];
+  } {
+    const locations: LocationInterface[] = _locations
+      .map((location) => {
+        const [longitude, latitude] = location.point.coordinates;
+        return {
+          distance: location.getDataValue('distance'),
+          status: location.user.status?.status || HealthStatusEnum.UNKNOWN,
+          sex: location.user.sex,
+          age: moment().diff(moment(location.user.birthDate), 'years'),
+          latitude,
+          longitude,
+        };
+      })
+      .map((l) => ({
+        ...l,
+        points: this.getLocationPoints(l.distance, l.status, l.sex, l.age),
+      }));
 
-    const pointSum = data.reduce(
-      (acc, d) => acc + this.getLocationPoints(d.distance, d.status),
-      0,
-    );
+    const pointSum = locations.reduce((acc, l) => acc + l.points, 0);
 
-    if (pointSum > this.POINTS_LIMITS.BAD) {
-      return { status: CrowdStatusEnum.BAD, points: pointSum };
-    }
-    if (pointSum > this.POINTS_LIMITS.OK) {
-      return { status: CrowdStatusEnum.OK, points: pointSum };
-    }
+    const status = this.getHealthStatus(pointSum);
 
-    return { status: CrowdStatusEnum.GOOD, points: pointSum };
+    return {
+      status,
+      points: pointSum,
+      locations: locations.map((l) => ({
+        points: l.points,
+        distance: l.distance,
+        latitude: l.latitude,
+        longitude: l.longitude,
+      })),
+    };
   }
 }

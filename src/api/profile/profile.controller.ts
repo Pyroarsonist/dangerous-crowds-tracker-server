@@ -25,6 +25,7 @@ export class ProfileController {
       userId,
       profile.name,
       profile.birthDate,
+      profile.sex,
     );
   }
 }

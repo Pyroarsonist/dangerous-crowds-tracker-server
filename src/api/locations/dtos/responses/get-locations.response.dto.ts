@@ -1,8 +1,10 @@
 import { CrowdStatusEnum } from 'api/locations/enums';
 
 class LocationDto {
-  public readonly latitude: number;
+  public readonly distance: number;
   public readonly longitude: number;
+  public readonly latitude: number;
+  public readonly points: number;
 }
 
 export class GetLocationsResponseDto {

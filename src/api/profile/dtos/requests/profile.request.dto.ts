@@ -1,4 +1,5 @@
-import { IsDateString, IsNotEmpty } from 'class-validator';
+import { IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
+import { SexEnum } from 'common/database/enums';
 
 export class ProfileRequestDto {
   @IsDateString()
@@ -6,4 +7,8 @@ export class ProfileRequestDto {
 
   @IsNotEmpty()
   public readonly name: string;
+
+  @IsNotEmpty()
+  @IsEnum(SexEnum)
+  public readonly sex: SexEnum;
 }
